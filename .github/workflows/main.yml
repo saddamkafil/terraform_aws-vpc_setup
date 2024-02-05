@@ -1,0 +1,45 @@
+name: Terraform Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      terraformPath:
+        description: 'Path to run Terraform plan'
+        required: true
+      deployEnv:
+        description: 'Choose deployment environment'
+        required: true
+        default: 'dev'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set Terraform Path
+      run: echo "TERRAFORM_PATH=${{ github.event.inputs.terraformPath }}" >> $GITHUB_ENV
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy
+      run: |
+        if [ "${{ github.event.inputs.deployEnv }}" == "prod" ]; then
+          echo "Deploying to Production"
+          echo "DEPLOYMENT_ENV=Production" >> $GITHUB_ENV
+        else
+          echo "Deploying to Development"
+          echo "DEPLOYMENT_ENV=Development" >> $GITHUB_ENV
+        fi
+
+  deploy:
+    needs: apply
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy
+      run: |
+        echo "Deploying to $DEPLOYMENT_ENV at $TERRAFORM_PATH"
+        # Add Terraform apply commands using $TERRAFORM_PATH and $DEPLOYMENT_ENV
